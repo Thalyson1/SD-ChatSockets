@@ -10,10 +10,13 @@ client.connect((host, port))
 def enviar_msg():
     try:
         nomeUser = input("Digite seu nick: ")
-        client.send(f"!nick {nomeUser}".encode('utf-8'))
+        comando_nick = f"{nomeUser}"
+        print(f"Enviando comando: {comando_nick}")
+        client.send(comando_nick.encode('utf-8'))
 
         response = client.recv(1024).decode('utf-8')
-
+        print(f"Lista de usuários conectados: {response}")
+        
         while True:
             msg = input("Digite uma mensagem: ")
             if msg.lower() == 'sair':

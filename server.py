@@ -19,12 +19,11 @@ def tratar_cliente(conec, addr):
             # Recebe o nome do cliente
             nomeUser = conec.recv(1024).decode('utf-8')
             if nomeUser.startswith("!nick"):
-                nomeUser = nomeUser[len("!nick "):].strip()
+                nomeUser = nomeUser[len("!nick"):].strip()
+
                 with lock:
                     clientes[conec] = nomeUser
                     print(f"Nome do usuário '{nomeUser}' registrado!")
-
-
                     lista_usuarios = ' '.join(clientes.values())
                     response = f"!users {len(clientes)} {lista_usuarios}"
                     conec.sendall(response.encode('utf-8'))
@@ -45,13 +44,14 @@ def tratar_cliente(conec, addr):
 
         except Exception as e:
             print(f"Erro ao tratar cliente {addr}: {e}")
+            
         finally:
-            # Remove o cliente ao desconectar
             with lock:
                 if conec in clientes:
                     del clientes[conec]
             print(f"Conexão de {addr} fechada.")
             conec.close()
+
 
 def broadcast(message, exclude_conn=None):
     """Envia uma mensagem para todos os clientes conectados, exceto o especificado."""
