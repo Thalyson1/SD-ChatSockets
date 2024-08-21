@@ -1,26 +1,75 @@
 import socket
 import threading
 
-
 host = '192.168.2.6'
 port = 8086
 SERVER = socket.gethostbyname(socket.gethostname())
 
-server =socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+clientes = {}
+lock = threading.Lock()
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind((host, port))
 
-
 def tratar_cliente(conec, addr):
-    print(f"[Nova conexão] {addr} conectado...")
-    conectado = True
-    while conectado:
-        msg_length = conec.recv(1024).decode("UTF-8")
-        if msg_length:
-            msg_length = int (msg_length)
-            msg= conec.recv(msg_length).decode("UTF-8")
-            if msg == "sair":
-                conectado = False
-            print(f"[{addr}] {msg}")
-        conec.send("Mensagem recebida".encode("UTF-8"))
-    conec.close()
+    with conec:
+        print(f"[Nova conexão] {addr} conectado...")
 
+        try:
+            # Recebe o nome do cliente
+            nomeUser = conec.recv(1024).decode('utf-8')
+            if nomeUser.startswith("!nick"):
+                nomeUser = nomeUser[len("!nick "):].strip()
+                with lock:
+                    clientes[conec] = nomeUser
+                    print(f"Nome do usuário '{nomeUser}' registrado!")
+
+
+                    lista_usuarios = ' '.join(clientes.values())
+                    response = f"!users {len(clientes)} {lista_usuarios}"
+                    conec.sendall(response.encode('utf-8'))
+
+            # O servidor vai receber as mensagens do usuário
+            while True:
+                try:
+                    msg = conec.recv(1024).decode("utf-8")
+                    if not msg:
+                        break
+                    print(f"{nomeUser} : {msg}")
+                    chat_user = f"{nomeUser}: {msg}"
+
+                    broadcast(chat_user, conec)
+
+                except (OSError, ConnectionResetError):
+                    break
+
+        except Exception as e:
+            print(f"Erro ao tratar cliente {addr}: {e}")
+        finally:
+            # Remove o cliente ao desconectar
+            with lock:
+                if conec in clientes:
+                    del clientes[conec]
+            print(f"Conexão de {addr} fechada.")
+            conec.close()
+
+def broadcast(message, exclude_conn=None):
+    """Envia uma mensagem para todos os clientes conectados, exceto o especificado."""
+    with lock:
+        for conn in clientes:
+            if conn != exclude_conn:
+                try:
+                    conn.sendall(message.encode('utf-8'))
+                except:
+                    conn.close()
+
+def iniciar():
+    server.listen()
+    print(f"[Rodando...] Servidor está escutando em {SERVER}:{port}")
+    while True:
+        conec, addr = server.accept()
+        thread = threading.Thread(target=tratar_cliente, args=(conec, addr))
+        thread.start()
+        print(f"[Conexões Ativas] {threading.activeCount() - 1}")
+
+iniciar()
