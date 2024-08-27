@@ -19,13 +19,14 @@ def tratar_cliente(conec, addr):
             # Recebe o nome do cliente
             nomeUser = conec.recv(1024).decode('utf-8')
 
+            #tratamento da tag
             if not nomeUser.startswith("!nick"):
                 print("Error, você deve enviar seu nickname primeiro '!nick nome'. \nServidor fechado...")
                 conec.close()
-
             else:
                 nomeUser = nomeUser[len("!nick"):].strip()
 
+                #Crie uma lista para inserir todos os users e dps mostrar eles para os usuários novos.
                 with lock:
                     clientes[conec] = nomeUser
                     print(f"Nome do usuário '{nomeUser}' registrado!")
@@ -36,6 +37,7 @@ def tratar_cliente(conec, addr):
             # O servidor vai receber as mensagens do usuário
             while True:
                 try:
+                    #devo iniciar +- aqui o tratamento de mensagens com a tag !send
                     msg = conec.recv(1024).decode("utf-8")
                     if not msg:
                         break
@@ -47,7 +49,7 @@ def tratar_cliente(conec, addr):
                 except:
                     break
 
-            
+        #caso naão dê certo, fechar conexão
         finally:
             with lock:
                 if conec in clientes:
@@ -57,7 +59,7 @@ def tratar_cliente(conec, addr):
 
 
 def broadcast(message, exclude_conn=None):
-    """Envia uma mensagem para todos os clientes conectados, exceto o especificado."""
+    #Envia uma mensagem para todos os clientes conectados, exceto o próprio user.
     with lock:
         for conn in clientes:
             if conn != exclude_conn:

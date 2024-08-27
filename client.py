@@ -9,28 +9,35 @@ client= socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect((host, port))
 
 def enviar_msg():
+    #client vai enviar o nome
     try:
         nomeUser = input("Digite seu nick: ")
         comando_nick = f"{nomeUser}"
         print(f"Enviando comando: {comando_nick}")
         client.send(comando_nick.encode('utf-8'))
 
+
+        #função threading para ficar recebendo dados do servidor sempre que tiver att.
         def receber_do_server():
             while True:
                 try:
+                    #pega os dados
                     response = client.recv(1024).decode('utf-8')
                     
                     if not response:
                         print("Conexão fechada")
                         break
+                    #mostra a(s) mensagem(s) do(s) usuário(s)
                     print(f"\n{response}")
                 except:
                     print("error")
                     break
+        #aqui mostra os usuários que estão conectados       
         response_Users = client.recv(1024).decode('utf-8')
         print(f"Usuários conectados: {response_Users}")
         threading.Thread(target=receber_do_server, daemon=True).start()
 
+        #receber a msg e tratamento para sair da aplicação
         while True:
             msg = input("Digite uma mensagem: \n")
             if msg.lower() == 'sair':
