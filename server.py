@@ -39,13 +39,29 @@ def tratar_cliente(conec, addr):
                 try:
                     #devo iniciar +- aqui o tratamento de mensagens com a tag !send
                     msg = conec.recv(1024).decode("utf-8")
-                    if not msg:
-                        break
-                    print(f"{nomeUser} : {msg}")
-                    chat_user = f"{nomeUser}: {msg}"
 
-                    broadcast(chat_user, conec)
+                    if msg.startswith("!sendmsg"):
 
+                        msg = msg[len("!sendmsg"):].strip()
+                        print(f"!msg {nomeUser} : {msg}")
+                        chat_user = f"{nomeUser}: {msg}"
+                        broadcast(chat_user, conec)
+
+
+                    elif msg.startswith("!changenickname"):
+                        nomeUserstate = nomeUser
+                        newNomeUser = msg[len("!changenickname"):].strip()
+
+                        if newNomeUser:
+                            nomeUser= newNomeUser
+                            broadcast(f"{nomeUserstate} trocou o nome para {nomeUser}\n")
+                        else:
+                            conec.send("Error: falha ao atualizar nome")
+                        
+                    else:
+                        broadcast(f"Error, {nomeUser} você deve informar a tag '!sendmsg' para enviar uma mensagem ou '!changenickname para trocar o nome', tente novamente\n")
+                        
+                    
                 except:
                     break
 
@@ -69,6 +85,7 @@ def broadcast(message, exclude_conn=None):
                     conn.close()
                     if conn in clientes:
                         del clientes[conn]
+
 
 def iniciar():
     server.listen()
