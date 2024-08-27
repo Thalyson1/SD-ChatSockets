@@ -18,7 +18,12 @@ def tratar_cliente(conec, addr):
         try:
             # Recebe o nome do cliente
             nomeUser = conec.recv(1024).decode('utf-8')
-            if nomeUser.startswith("!nick"):
+
+            if not nomeUser.startswith("!nick"):
+                print("Error, você deve enviar seu nickname primeiro '!nick nome'. \nServidor fechado...")
+                conec.close()
+
+            else:
                 nomeUser = nomeUser[len("!nick"):].strip()
 
                 with lock:
@@ -39,17 +44,15 @@ def tratar_cliente(conec, addr):
 
                     broadcast(chat_user, conec)
 
-                except (OSError, ConnectionResetError):
+                except:
                     break
 
-        except Exception as e:
-            print(f"Erro ao tratar cliente {addr}: {e}")
             
         finally:
             with lock:
                 if conec in clientes:
                     del clientes[conec]
-            print(f"Conexão de {addr} fechada.")
+            print(f"Conexão {addr} fechada.")
             conec.close()
 
 
@@ -62,6 +65,8 @@ def broadcast(message, exclude_conn=None):
                     conn.sendall(message.encode('utf-8'))
                 except:
                     conn.close()
+                    if conn in clientes:
+                        del clientes[conn]
 
 def iniciar():
     server.listen()
