@@ -54,13 +54,20 @@ def tratar_cliente(conec, addr):
 
                         if newNomeUser:
                             nomeUser= newNomeUser
+                            clientes[conec] = nomeUser
                             broadcast(f"{nomeUserstate} trocou o nome para {nomeUser}\n")
                         else:
                             conec.send("Error: falha ao atualizar nome")
-                        
+                    
+                    elif msg.startswith("!poke"):
+                        pokeUser = msg.split(' ')[1].strip()
+                        if pokeUser in clientes.values():
+                            broadcast(f"!poke {nomeUser} cutucou {pokeUser}\n")
+                        else:
+                            conec.send("Error: Usuário não encontrado")
+
                     else:
-                        broadcast(f"Error, {nomeUser} você deve informar a tag '!sendmsg' para enviar uma mensagem ou '!changenickname para trocar o nome', tente novamente\n")
-                        
+                        broadcast(f"Error, {nomeUser} você deve informar a tag '!sendmsg' para enviar uma mensagem, '!changenickname' para trocar o nome, ou '!poke' para cutucar um usuário, tente novamente\n")
                     
                 except:
                     break
@@ -72,6 +79,9 @@ def tratar_cliente(conec, addr):
                     del clientes[conec]
             print(f"Conexão {addr} fechada.")
             conec.close()
+
+
+
 
 
 def broadcast(message, exclude_conn=None):
